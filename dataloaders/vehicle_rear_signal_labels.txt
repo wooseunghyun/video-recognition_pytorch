@@ -1,0 +1,8 @@
+1 BLO
+2 BLR
+3 BOO
+4 BOR
+5 OLO
+6 OLR
+7 OOO
+8 OOR
