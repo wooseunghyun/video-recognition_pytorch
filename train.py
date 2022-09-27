@@ -20,11 +20,13 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print("Device being used:", device)
 
 nEpochs = 120  # Number of epochs for training
-resume_epoch = 100  # Default is 0, change if want to resume
+resume_epoch = 0  # Default is 0, change if want to resume
 useTest = True # See evolution of the test set when training
 nTestInterval = 20 # Run on test set every nTestInterval epochs
 snapshot = 50 # Store a model every snapshot epochs
 lr = 1e-4 # Learning rate
+batch_size = 20
+workers = 5
 
 dataset = 'vehicle_rear_signal' # Options: hmdb51 or ucf101
 
@@ -101,9 +103,10 @@ def train_model(dataset=dataset, save_dir=save_dir, num_classes=num_classes, lr=
 
     print('Training model on {} dataset...'.format(dataset))
     #clip_len 원래 16이었는데 12이하로 바꿔야해서 8로 바꿈
-    train_dataloader = DataLoader(VideoDataset(dataset=dataset, split='train',clip_len=150), batch_size=20, shuffle=True, num_workers=0)
-    val_dataloader   = DataLoader(VideoDataset(dataset=dataset, split='val',  clip_len=150), batch_size=20, num_workers=0)
-    test_dataloader  = DataLoader(VideoDataset(dataset=dataset, split='test', clip_len=150), batch_size=20, num_workers=0)
+    #
+    train_dataloader = DataLoader(VideoDataset(dataset=dataset, split='train',clip_len=150), batch_size, shuffle=True, num_workers=workers)
+    val_dataloader   = DataLoader(VideoDataset(dataset=dataset, split='val',  clip_len=150), batch_size, num_workers=workers)
+    test_dataloader  = DataLoader(VideoDataset(dataset=dataset, split='test', clip_len=150), batch_size, num_workers=workers)
 
     trainval_loaders = {'train': train_dataloader, 'val': val_dataloader}
     trainval_sizes = {x: len(trainval_loaders[x].dataset) for x in ['train', 'val']}
