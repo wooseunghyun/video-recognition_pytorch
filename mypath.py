@@ -31,6 +31,14 @@ class Path(object):
             output_dir = './output/vehicle_break_signal'
 
             return root_dir, output_dir
+
+        elif database == 'selfharm':
+            # folder that contains class labels
+            root_dir = './data/selfharm'
+
+            output_dir = './output/selfharm'
+
+            return root_dir, output_dir
         else:
             print('Database {} not available.'.format(database))
             raise NotImplementedError

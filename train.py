@@ -17,9 +17,9 @@ from network import C3D_model, R2Plus1D_model, R3D_model
 
 # Use GPU if available else revert to CPU
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-print("Device being used:", device)
+#print("Device being used:", device)
 
-nEpochs = 120  # Number of epochs for training
+nEpochs = 40  # Number of epochs for training
 resume_epoch = 0  # Default is 0, change if want to resume
 useTest = True # See evolution of the test set when training
 nTestInterval = 20 # Run on test set every nTestInterval epochs
@@ -28,7 +28,7 @@ lr = 1e-4 # Learning rate
 batch_size = 20
 workers = 5
 
-dataset = 'vehicle_rear_signal' # Options: hmdb51 or ucf101
+dataset = 'selfharm' # Options: hmdb51 or ucf101
 
 if dataset == 'hmdb51':
     num_classes=51
@@ -37,6 +37,8 @@ elif dataset == 'ucf101':
 elif dataset == 'vehicle_rear_signal':
     num_classes = 8
 elif dataset == 'vehicle_break_signal':
+    num_classes = 2
+elif dataset == 'selfharm':
     num_classes = 2
 else:
     print('We only implemented hmdb and ucf datasets.')
@@ -104,9 +106,9 @@ def train_model(dataset=dataset, save_dir=save_dir, num_classes=num_classes, lr=
     print('Training model on {} dataset...'.format(dataset))
     #clip_len 원래 16이었는데 12이하로 바꿔야해서 8로 바꿈
     #
-    train_dataloader = DataLoader(VideoDataset(dataset=dataset, split='train',clip_len=150), batch_size, shuffle=True, num_workers=workers)
-    val_dataloader   = DataLoader(VideoDataset(dataset=dataset, split='val',  clip_len=150), batch_size, num_workers=workers)
-    test_dataloader  = DataLoader(VideoDataset(dataset=dataset, split='test', clip_len=150), batch_size, num_workers=workers)
+    train_dataloader = DataLoader(VideoDataset(dataset=dataset, split='train',clip_len=16, preprocess=True), batch_size, shuffle=True, num_workers=workers)
+    val_dataloader   = DataLoader(VideoDataset(dataset=dataset, split='val',  clip_len=16, preprocess=True), batch_size, num_workers=workers)
+    test_dataloader  = DataLoader(VideoDataset(dataset=dataset, split='test', clip_len=16, preprocess=True), batch_size, num_workers=workers)
 
     trainval_loaders = {'train': train_dataloader, 'val': val_dataloader}
     trainval_sizes = {x: len(trainval_loaders[x].dataset) for x in ['train', 'val']}
@@ -183,6 +185,7 @@ def train_model(dataset=dataset, save_dir=save_dir, num_classes=num_classes, lr=
             running_loss = 0.0
             running_corrects = 0.0
 
+            f1_score = 0
             for inputs, labels in tqdm(test_dataloader):
                 inputs = inputs.to(device)
                 labels = labels.to(device)
@@ -191,6 +194,7 @@ def train_model(dataset=dataset, save_dir=save_dir, num_classes=num_classes, lr=
                     outputs = model(inputs)
                 probs = nn.Softmax(dim=1)(outputs)
                 preds = torch.max(probs, 1)[1]
+                f1_score += f1(preds, labels)
                 loss = criterion(outputs, labels.long())
 
                 running_loss += loss.item() * inputs.size(0)
@@ -202,7 +206,8 @@ def train_model(dataset=dataset, save_dir=save_dir, num_classes=num_classes, lr=
             writer.add_scalar('data/test_loss_epoch', epoch_loss, epoch)
             writer.add_scalar('data/test_acc_epoch', epoch_acc, epoch)
  
-            print("[test] Epoch: {}/{} Loss: {} Acc: {}".format(epoch+1, nEpochs, epoch_loss, epoch_acc))
+            print("[test] Epoch: {}/{} Loss: {} Acc: {} F1: {}".format(epoch+1, nEpochs, epoch_loss, epoch_acc, f1_score))
+            #print("[test] Epoch: {}/{} Loss: {} Acc: {}".format(epoch+1, nEpochs, epoch_loss, epoch_acc))
             stop_time = timeit.default_timer()
             print("Execution time: " + str(stop_time - start_time) + "\n")
 

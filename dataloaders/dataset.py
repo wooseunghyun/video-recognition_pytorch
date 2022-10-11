@@ -26,7 +26,8 @@ class VideoDataset(Dataset):
         folder = os.path.join(self.output_dir, split)
         self.clip_len = clip_len
         self.split = split
-
+        self.dataset = dataset
+        self.preprocess_state = preprocess
         # The following three parameters are chosen as described in the paper section 4.1
         self.resize_height = 128
         self.resize_width = 171
@@ -83,6 +84,11 @@ class VideoDataset(Dataset):
                     for id, label in enumerate(sorted(self.label2index)):
                         f.writelines(str(id+1) + ' ' + label + '\n')
 
+        elif dataset == 'selfharm':
+            if not os.path.exists('selfharm_labels.txt'):
+                with open('dataloaders/selfharm_labels_labels.txt', 'w') as f:
+                    for id, label in enumerate(sorted(self.label2index)):
+                        f.writelines(str(id+1) + ' ' + label + '\n')
 
     def __len__(self):
         return len(self.fnames)
@@ -154,16 +160,19 @@ class VideoDataset(Dataset):
             if not os.path.exists(test_dir):
                 os.mkdir(test_dir)
 
-#제대로 안되면 여기 바꿔야함shw
-#            for video in train:
-#                self.process_video(video, file, train_dir)
-#
- #           for video in val:
-  #              self.process_video(video, file, val_dir)
-#
- #           for video in test:
-  #              self.process_video(video, file, test_dir)
+            #제대로 안되면 여기 바꿔야함shw
+            if self.preprocess_state == True:
+                for video in train:
+                    self.process_video(video, file, train_dir)
 
+                for video in val:
+                    self.process_video(video, file, val_dir)
+
+                for video in test:
+                    self.process_video(video, file, test_dir)
+
+
+           
         print('Preprocessing finished.')
 
     def process_video(self, video, action_name, save_dir):
